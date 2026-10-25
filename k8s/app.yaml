@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-serving-api
+  namespace: llm-serving
+  labels:
+    app: llm-serving-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: llm-serving-api
+  template:
+    metadata:
+      labels:
+        app: llm-serving-api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8000"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          # Replace this with an image you build and push to a registry you control.
+          image: ghcr.io/YOUR_GITHUB_USERNAME/llm-serving-observability:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: MODEL_BACKEND
+              value: "mock"
+            - name: LOG_LEVEL
+              value: "INFO"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 12
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-serving-api
+  namespace: llm-serving
+  labels:
+    app: llm-serving-api
+spec:
+  selector:
+    app: llm-serving-api
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+  type: ClusterIP

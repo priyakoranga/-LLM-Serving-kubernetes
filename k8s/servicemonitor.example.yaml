@@ -1,0 +1,19 @@
+# Optional: use only if Prometheus Operator / kube-prometheus-stack is installed.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: llm-serving-api
+  namespace: llm-serving
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - llm-serving
+  selector:
+    matchLabels:
+      app: llm-serving-api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

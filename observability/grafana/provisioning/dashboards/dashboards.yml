@@ -1,0 +1,10 @@
+apiVersion: 1
+providers:
+  - name: LLM Serving
+    orgId: 1
+    folder: LLM Serving
+    type: file
+    disableDeletion: true
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
